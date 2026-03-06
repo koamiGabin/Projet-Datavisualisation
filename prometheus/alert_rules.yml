@@ -1,0 +1,33 @@
+groups:
+  - name: production_rules
+    rules:
+      # 1. Alerte Symptôme (Erreurs) [cite: 53]
+      - alert: API_High_Error_Rate
+        expr: (sum(rate(http_requests_total{status="500"}[5m])) / sum(rate(http_requests_total[5m]))) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          env: production
+        annotations:
+          summary: "Taux d'erreur élevé sur l'API"
+          description: "Le taux d'erreur est > 5%. Verifiez les logs de l'application."
+
+      # 2. Alerte Saturation (CPU) [cite: 54]
+      - alert: Host_High_CPU_Usage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Saturation CPU détectée"
+          description: "Utilisation CPU > 85% sur {{ $labels.instance }}."
+
+      # 3. Alerte Qualité (Target Down) [cite: 55]
+      - alert: Service_Down
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service injoignable"
+          description: "L'instance {{ $labels.job }} est hors ligne."
